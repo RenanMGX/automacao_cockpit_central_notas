@@ -44,7 +44,7 @@ class Dados:
             df:pd.DataFrame = pd.read_json(file_base_path)
             df_concat:pd.DataFrame = pd.concat([df, self.df], ignore_index=True)
             df_concat = df_concat.drop_duplicates()
-            df_concat.to_json(file_base_path, orient='records')
+            df_concat.to_json(file_base_path, orient='records', date_format='iso')
             print(P("Incrementação Concluida!", color='green'))
             return self
         except Exception as error:
