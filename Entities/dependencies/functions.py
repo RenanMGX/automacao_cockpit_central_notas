@@ -10,7 +10,7 @@ import asyncio
 
 class Functions:
     @staticmethod
-    def fechar_excel(path:str, *, timeout:int=1, wait:int=0) -> bool:
+    def fechar_excel(path:str, *, timeout:int=1, wait:int=5) -> bool:
         if wait > 0:
             sleep(wait)
         try:
@@ -94,6 +94,7 @@ class P:
 
  
 if __name__ == "__main__":
+    Functions.excel_open()
     
-    pass
+    import pdb; pdb.set_trace()
     

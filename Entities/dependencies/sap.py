@@ -6,6 +6,7 @@ import psutil
 import subprocess
 from time import sleep
 import traceback
+from functions import P
 
 
 class SAPManipulation():
@@ -44,25 +45,23 @@ class SAPManipulation():
             try:
                 self.session
             except AttributeError:
-                self.conectar_sap()
+                self.__conectar_sap()
             try:
                 result =  f(self, *args, **kwargs)
             finally:
                 sleep(5)
-                try:
-                    if kwargs['fechar_sap_no_final']:
-                        self.fechar_sap()
-                except:
-                    pass
+                if kwargs.get('fechar_sap_no_final') == True:
+                    self.fechar_sap()
             return result
                 #raise Exception("o sap precisa ser conectado primeiro!")
         return wrap
     
-    def conectar_sap(self) -> None:
+    def __conectar_sap(self) -> None:
+        print(P("Iniciando SAP"))
         self.__session: win32com.client.CDispatch
         if not self.using_active_conection:
             try:
-                if not self._verificar_sap_aberto():
+                if not self.__verificar_sap_aberto():
                     subprocess.Popen(r"C:\Program Files (x86)\SAP\FrontEnd\SapGui\saplogon.exe")
                     sleep(5)
                 
@@ -84,7 +83,7 @@ class SAPManipulation():
                     raise ConnectionError(f"não foi possivel se conectar ao SAP motivo: {type(error).__class__} -> {error}")
         else:
             try:
-                if not self._verificar_sap_aberto():
+                if not self.__verificar_sap_aberto():
                     raise Exception("SAP está fechado!")
                 
                 self.SapGuiAuto: win32com.client.CDispatch = win32com.client.GetObject("SAPGUI")
@@ -102,7 +101,7 @@ class SAPManipulation():
 
     #@usar_sap
     def fechar_sap(self):
-        print("fechando SAP!")
+        print(P("fechando SAP!"))
         try:
             sleep(1)
             self.session.findById("wnd[0]").close()
@@ -113,24 +112,27 @@ class SAPManipulation():
                 self.session.findById('wnd[2]/usr/btnSPOP-OPTION1').press()
                 del self.__session
         except Exception as error:
-            print(f"não foi possivel fechar o SAP {type(error)} | {error}")
+            if 'O objeto chamado foi desconectado de seus clientes.' in str(error):
+                print(P("SAP já está fechado", color='yellow'))
+                return
+            print(P(f"não foi possivel fechar o SAP {type(error)} | {error}"))
 
     @start_SAP
-    def _listar(self, campo):
+    def listar(self, campo):
         cont = 0
         for child_object in self.session.findById(campo).Children:
-            print(f"{cont}: ","ID:", child_object.Id, "| Type:", child_object.Type, "| Text:", child_object.Text)
+            print(P(f"{cont} | ID: {child_object.Id} | Type: {child_object.Type} | Text: {child_object.Text}"))
             cont += 1
 
-    def _verificar_sap_aberto(self) -> bool:
+    def __verificar_sap_aberto(self) -> bool:
         for process in psutil.process_iter(['name']):
             if "saplogon" in process.name().lower():
                 return True
         return False    
     
     @start_SAP
-    def _teste(self):
-        print("testado")
+    def __teste(self):
+        print(P("testado"))
   
 if __name__ == "__main__":
     pass

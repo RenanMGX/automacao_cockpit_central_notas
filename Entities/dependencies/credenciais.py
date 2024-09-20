@@ -115,7 +115,7 @@ class Credential:
         return self.criar_cifra(text, -key)
         
 if __name__ == "__main__":
-    crd = Credential('test')
+    crd = Credential('SAP_PRD')
     
     
     print(crd.load())

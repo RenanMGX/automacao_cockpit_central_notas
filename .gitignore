@@ -3,6 +3,9 @@
 *.logs
 *Logs
 *teste.py
+*config.init
+*test_execute.py
+*teste.ipynb
 
 
 
