@@ -24,6 +24,7 @@ class Execute:
         Dados(download_file).incrementar(file_base_path=Execute.file_base_path)
         ExtrairRelatorio.limpar_download_path()
         print(P("Fim da automaçao", color='green'))
+        Logs().register(status='Concluido', description="Automação finalizada com Sucesso!")
     
 if __name__ == "__main__":
     Arguments({
