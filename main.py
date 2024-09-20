@@ -7,9 +7,10 @@ from Entities.dependencies.arguments import Arguments
 from Entities.dependencies.functions import P
 from Entities.dependencies.logs import Logs
 import traceback
+from getpass import getuser
 
 class Execute:
-    file_base_path:str = f"C:\\Users\\renan.oliveira\\PATRIMAR ENGENHARIA S A\\RPA - Documentos\\RPA - Dados\\Dados - Contabilidade\\base.json"
+    file_base_path:str = f"C:\\Users\\{getuser()}\\PATRIMAR ENGENHARIA S A\\RPA - Documentos\\RPA - Dados\\Dados - Contabilidade\\base.json"
     if not os.path.exists(file_base_path):
         try:
             raise FileNotFoundError(f"não foi possivel localizar o arquivo '{file_base_path}'")
