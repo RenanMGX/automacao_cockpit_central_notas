@@ -7,7 +7,7 @@ import subprocess
 from time import sleep
 import traceback
 from functions import P
-
+from functools import wraps
 
 class SAPManipulation():
     @property
