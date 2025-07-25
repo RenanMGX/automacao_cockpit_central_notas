@@ -1,1 +1,0 @@
-PROJECT_NAME:str = "Automatização Dashboard - Cockpit Central de Notas"

@@ -2,8 +2,10 @@ import os
 import shutil
 import pandas as pd
 from functools import wraps
-from dependencies.functions import P
-from dependencies.logs import Logs, traceback
+from patrimar_dependencies.functions import P
+from patrimar_dependencies.logs import Logs_old, traceback
+
+import json
 
 class Dados:
     @property
@@ -39,18 +41,27 @@ class Dados:
         return wrap
     
     @validar_file_base
-    def incrementar(self, *, file_base_path:str):
+    def incrementar(self, *, file_base_path:str, coluna_chaves:str='Chave de acesso de 44 dígitos'):
         try:
             df:pd.DataFrame = pd.read_json(file_base_path)
             df_concat:pd.DataFrame = pd.concat([df, self.df], ignore_index=True)
-            df_concat = df_concat.drop_duplicates()
-            df_concat.to_json(file_base_path, orient='records', date_format='iso')
+            # df_concat = df_concat.drop_duplicates()
+            # df_concat.to_json(file_base_path, orient='records', date_format='iso')
+            
+            df_concat = df_concat.drop_duplicates(subset=df_concat.columns.difference([coluna_chaves]))
+            try:
+                df_concat[coluna_chaves] = df_concat[coluna_chaves].astype(str)
+                with open(file_base_path, 'w', encoding='utf-8') as _file:
+                    json.dump(df_concat.to_dict(orient='records'), _file, default=str)
+            except:
+                df_concat.to_json(file_base_path, orient='records', date_format='iso')
+                
             print(P("Incrementação Concluida!", color='green'))
             return self
         except Exception as error:
             print(P("Erro ao fazer a incrementação", color='red'))
             print(P((type(error), str(error)), color='red'))
-            Logs().register(status='Error', description=str(error), exception=traceback.format_exc())
+            Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
             raise error
             
     

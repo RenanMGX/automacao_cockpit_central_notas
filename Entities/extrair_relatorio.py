@@ -1,19 +1,23 @@
 import os
-from dependencies.sap import SAPManipulation
-from dependencies.config import Config
-from dependencies.credenciais import Credential
-from dependencies.logs import Logs
+from patrimar_dependencies.sap import SAPManipulation
+from patrimar_dependencies.config import Config
+from patrimar_dependencies.credenciais import Credential
+from patrimar_dependencies.sharepointfolder import SharePointFolders
+from patrimar_dependencies.logs import Logs_old
 import traceback
 from datetime import datetime
 from functools import wraps
-from dependencies.functions import P, Functions
+from patrimar_dependencies.functions import P, Functions
 import shutil
 
 class ExtrairRelatorio(SAPManipulation):
     download_path = os.path.join(os.getcwd(), 'download_path')
     
     def __init__(self) -> None:
-        crd:dict = Credential(Config()['credential']['crd']).load()
+        crd:dict = Credential(
+            path_raiz=SharePointFolders(r"RPA - Dados\CRD\.patrimar_rpa\credenciais").value,
+            name_file=Config()['credential']['crd']            
+            ).load()
         super().__init__(user=crd['user'], password=crd['password'], ambiente=crd['ambiente'], new_conection=True)
     
     @staticmethod
@@ -35,7 +39,7 @@ class ExtrairRelatorio(SAPManipulation):
     
     @preparar_entradas
     @SAPManipulation.start_SAP 
-    def extrair(self, *, file_name:str, date_min:datetime, date_max:datetime, fechar_sap_no_final:bool, download_path:str=download_path,) -> str:
+    def extrair(self, *, file_name:str, date_min:datetime, date_max:datetime, fechar_sap_no_final:bool, download_path:str=download_path) -> str:
         print(P("Iniciando Extração"))
         try:
             print(P("entrando na transação 'start_report'"))
@@ -58,10 +62,10 @@ class ExtrairRelatorio(SAPManipulation):
             
             self.session.findById("wnd[0]/usr/cntlCONTAINER/shellcont/shell").contextMenu()
             self.session.findById("wnd[0]/usr/cntlCONTAINER/shellcont/shell").selectContextMenuItem("&XXL")
+            
             self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
             self.session.findById("wnd[1]/usr/ctxtDY_PATH").text = download_path
             self.session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = file_name
-            self.session.findById("wnd[1]/usr/ctxtDY_FILENAME").caretPosition = 10
             print(P("extraindo relatorio"))
             self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
             
@@ -71,7 +75,45 @@ class ExtrairRelatorio(SAPManipulation):
             return final_path
             
         except Exception as error:
-            Logs().register(status='Error', description=str(error), exception=traceback.format_exc())
+            Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
+            raise error
+        
+    @SAPManipulation.start_SAP 
+    def extrair_vtin(self, *, file_name:str, date_min:datetime, date_max:datetime, fechar_sap_no_final:bool, download_path:str=download_path) -> str:
+        print(P("Iniciando Extração"))
+        try:
+            if not file_name.lower().endswith(('.xlsx', '.xls', '.xlsm')):
+                file_name += ".xlsx"
+            
+            
+            self.session.findById("wnd[0]/tbar[0]/okcd").text = "/n/vtin/mde"
+            self.session.findById("wnd[0]").sendVKey(0)
+            self.session.findById("wnd[0]/usr/ctxtS_CREDAT-LOW").text = date_min.strftime("%d.%m.%Y")
+            self.session.findById("wnd[0]/usr/ctxtS_CREDAT-HIGH").text = date_max.strftime("%d.%m.%Y")
+            self.session.findById("wnd[0]/usr/ctxtP_VARI").text = "EXTRACTVTIN"
+            self.session.findById("wnd[0]/tbar[1]/btn[8]").press()
+                        
+            self.session.findById("wnd[0]/usr/shell/shellcont[0]/shell").pressToolbarContextButton("&MB_EXPORT")
+            self.session.findById("wnd[0]/usr/shell/shellcont[0]/shell").selectContextMenuItem("&XXL")            
+            self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
+            
+            self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
+            self.session.findById("wnd[1]/usr/ctxtDY_PATH").text = download_path
+            self.session.findById("wnd[1]/usr/ctxtDY_FILENAME").text = file_name
+            print(P("extraindo relatorio"))
+            self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
+            
+            final_path:str = os.path.join(download_path, file_name)
+            print(final_path)
+            Functions.fechar_excel(final_path)
+            print(P("extração finalizada!", color='green'))
+            
+            #import pdb;pdb.set_trace()
+            
+            return final_path
+            
+        except Exception as error:
+            Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
             raise error
        
     @staticmethod
@@ -84,7 +126,7 @@ class ExtrairRelatorio(SAPManipulation):
                 elif os.path.isdir(file):
                     shutil.rmtree(file)
             except Exception as error:
-                Logs().register(status='Error', description=str(error), exception=traceback.format_exc())
+                Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
 
 if __name__ == "__main__":
     pass
