@@ -9,6 +9,7 @@ from datetime import datetime
 from functools import wraps
 from patrimar_dependencies.functions import P, Functions
 import shutil
+from time import sleep
 
 class ExtrairRelatorio(SAPManipulation):
     download_path = os.path.join(os.getcwd(), 'download_path')
@@ -70,6 +71,7 @@ class ExtrairRelatorio(SAPManipulation):
             self.session.findById("wnd[1]/tbar[0]/btn[0]").press()
             
             final_path:str = os.path.join(download_path, file_name)
+            sleep(10)
             Functions.fechar_excel(final_path)
             print(P("extração finalizada!", color='green'))
             return final_path
@@ -105,6 +107,7 @@ class ExtrairRelatorio(SAPManipulation):
             
             final_path:str = os.path.join(download_path, file_name)
             print(final_path)
+            sleep(10)
             Functions.fechar_excel(final_path)
             print(P("extração finalizada!", color='green'))
             
