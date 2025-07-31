@@ -3,11 +3,18 @@ import shutil
 import pandas as pd
 from functools import wraps
 from patrimar_dependencies.functions import P
-from patrimar_dependencies.logs import Logs_old, traceback
-
+import traceback
+from botcity.maestro import * #type:ignore
 import json
 
 class Dados:
+    maestro:BotMaestroSDK|None
+    try:
+        maestro = BotMaestroSDK().from_sys_args()
+        maestro.get_execution()
+    except:
+        maestro = None
+    
     @property
     def file_path(self) -> str:
         return self.__file_path
@@ -61,8 +68,17 @@ class Dados:
         except Exception as error:
             print(P("Erro ao fazer a incrementação", color='red'))
             print(P((type(error), str(error)), color='red'))
-            Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
+            
+            if not self.maestro is None:
+                self.maestro.alert(
+                    task_id=self.maestro.get_execution().task_id,
+                    title=str(error),
+                    message=str(traceback.format_exc()),
+                    alert_type=AlertType.ERROR
+                )  
+                          
             raise error
             
-    
+if __name__ == "__main__":
+    pass 
     

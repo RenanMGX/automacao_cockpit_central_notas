@@ -1,25 +1,27 @@
 import os
 from patrimar_dependencies.sap import SAPManipulation
-from patrimar_dependencies.config import Config
-from patrimar_dependencies.credenciais import Credential
 from patrimar_dependencies.sharepointfolder import SharePointFolders
-from patrimar_dependencies.logs import Logs_old
 import traceback
 from datetime import datetime
 from functools import wraps
 from patrimar_dependencies.functions import P, Functions
 import shutil
 from time import sleep
+from botcity.maestro import * #type:ignore
 
 class ExtrairRelatorio(SAPManipulation):
     download_path = os.path.join(os.getcwd(), 'download_path')
     
-    def __init__(self) -> None:
-        crd:dict = Credential(
-            path_raiz=SharePointFolders(r"RPA - Dados\CRD\.patrimar_rpa\credenciais").value,
-            name_file=Config()['credential']['crd']            
-            ).load()
-        super().__init__(user=crd['user'], password=crd['password'], ambiente=crd['ambiente'], new_conection=True)
+    def __init__(self, *, user:str, password:str, ambiente:str) -> None:    
+        self.__maestro:BotMaestroSDK|None
+        try:
+            self.__maestro = BotMaestroSDK().from_sys_args()
+            self.__maestro.get_execution()
+        except:
+            self.__maestro = None
+        
+            
+        super().__init__(user=user, password=password, ambiente=ambiente, new_conection=True)
     
     @staticmethod
     def preparar_entradas(f):
@@ -77,7 +79,13 @@ class ExtrairRelatorio(SAPManipulation):
             return final_path
             
         except Exception as error:
-            Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
+            if not self.__maestro is None:
+                self.__maestro.alert(
+                    task_id=self.__maestro.get_execution().task_id,
+                    title=str(error),
+                    message=str(traceback.format_exc()),
+                    alert_type=AlertType.ERROR
+                )           
             raise error
         
     @SAPManipulation.start_SAP 
@@ -116,11 +124,28 @@ class ExtrairRelatorio(SAPManipulation):
             return final_path
             
         except Exception as error:
-            Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
+            if not self.__maestro is None:
+                self.__maestro.alert(
+                    task_id=self.__maestro.get_execution().task_id,
+                    title=str(error),
+                    message=str(traceback.format_exc()),
+                    alert_type=AlertType.ERROR
+                )           
             raise error
        
     @staticmethod
     def limpar_download_path(download_path:str=download_path):
+        maestro:BotMaestroSDK|None
+        try:
+            maestro = BotMaestroSDK().from_sys_args()
+            maestro.get_execution()
+        except:
+            maestro = None
+            
+        if not os.path.exists(download_path):
+            os.makedirs(download_path)
+        
+        
         for file in os.listdir(download_path):
             file:str = os.path.join(download_path, file)
             try:
@@ -129,7 +154,13 @@ class ExtrairRelatorio(SAPManipulation):
                 elif os.path.isdir(file):
                     shutil.rmtree(file)
             except Exception as error:
-                Logs_old().register(status='Error', description=str(error), exception=traceback.format_exc())
+                if not maestro is None:
+                    maestro.alert(
+                        task_id=maestro.get_execution().task_id,
+                        title=str(error),
+                        message=str(traceback.format_exc()),
+                        alert_type=AlertType.INFO
+                    )           
 
 if __name__ == "__main__":
     pass
